@@ -8,7 +8,7 @@ import * as am4maps from "@amcharts/amcharts4/maps";
 import worldGeoData from "@amcharts/amcharts4-geodata/worldLow";
 import usaGeoData from "@amcharts/amcharts4-geodata/usaLow";
 import indiaGeoData from "@amcharts/amcharts4-geodata/indiaLow";
-import { getCountries } from "../api/map-api";
+import { getLocations } from "../api/firebase-api";
 
 const visitedCountries = [
   "BE",
@@ -103,9 +103,9 @@ export default {
     initGlobeState() {
       // map_api
       // get countries
-      let countries = getCountries();
-      console.log("countries");
-      console.log(countries);
+      let locs = getLocations();
+      console.log("locations from firebase");
+      locs.then(a => console.log(a));
     },
     setupChart() {
       this.chart = am4core.create(this.$refs.chartdiv, am4maps.MapChart);

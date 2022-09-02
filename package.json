@@ -12,6 +12,8 @@
     "@amcharts/amcharts4-geodata": "^4.1.17",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
+    "firebase": "^9.9.4",
+    "firebase-tools": "^11.8.0",
     "vue": "^2.6.11",
     "vuex": "^3.4.0"
   },
