@@ -3,18 +3,27 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from "vue";
 import * as am5 from "@amcharts/amcharts5";
 import * as am5map from "@amcharts/amcharts5/map";
-import am5geodata_worldLow from "@amcharts/amcharts5-geodata/worldLow";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
-import { onMounted } from "vue";
+import am5themes_Dark from "@amcharts/amcharts5/themes/Dark";
+import worldLow from "@amcharts/amcharts5-geodata/worldLow";
+import usaLow from "@amcharts/amcharts5-geodata/usaLow";
+import indiaLow from "@amcharts/amcharts5-geodata/indiaLow";
+import { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
+import { visitedCountries, visitedStatesIndia, visitedStatesUSA } from "./visitedTemp"
+
+onMounted(() => {
+  initGlobeChart();
+})
 
 function initGlobeChart() {
   const root = am5.Root.new("chartdiv");
-  root.setThemes([am5themes_Animated.new(root)]);
-
-  // Create the map chart
-  // https://www.amcharts.com/docs/v5/charts/map-chart/
+  root.setThemes([
+    am5themes_Animated.new(root),
+    am5themes_Dark.new(root)
+  ]);
   const chart = root.container.children.push(
     am5map.MapChart.new(root, {
       panX: "rotateX",
@@ -26,31 +35,47 @@ function initGlobeChart() {
       paddingRight: 20,
     })
   );
+  plotDisabledCountries(root, chart, worldLow, visitedCountries);
+  plotCountries(root, chart, worldLow, visitedCountries);
+  plotCountries(root, chart, usaLow, visitedStatesUSA);
+  plotCountries(root, chart, indiaLow, visitedStatesIndia);
+  plotBackground(root, chart);
+  chart.appear(1000, 100);
+}
 
-  // Create main polygon series for countries
-  // https://www.amcharts.com/docs/v5/charts/map-chart/map-polygon-series/
-  const polygonSeries = chart.series.push(
+function plotDisabledCountries(root: am5.Root, chart: am5map.MapChart, geoData: FeatureCollection<Geometry, GeoJsonProperties>, visited: string[]) {
+  const disabledSeries = chart.series.push(
     am5map.MapPolygonSeries.new(root, {
-      geoJSON: am5geodata_worldLow,
+      geoJSON: geoData,
+      exclude: visited,
+      fill: root.interfaceColors.get("disabled"),
     })
   );
+}
 
-  polygonSeries.mapPolygons.template.setAll({
+function plotCountries(root: am5.Root, chart: am5map.MapChart, geoData: FeatureCollection<Geometry, GeoJsonProperties>, visited: string[]) {
+  const worldSeries = chart.series.push(
+    am5map.MapPolygonSeries.new(root, {
+      geoJSON: geoData,
+      include: visited,
+    })
+  );
+  worldSeries.mapPolygons.template.setAll({
     tooltipText: "{name}",
     toggleKey: "active",
     interactive: true,
   });
-
-  polygonSeries.mapPolygons.template.states.create("hover", {
+  worldSeries.mapPolygons.template.states.create("hover", {
     fill: root.interfaceColors.get("primaryButtonHover"),
   });
 
-  polygonSeries.mapPolygons.template.states.create("active", {
+  worldSeries.mapPolygons.template.states.create("active", {
     fill: root.interfaceColors.get("primaryButtonHover"),
   });
+  setOnClickEvent(chart, worldSeries);
+}
 
-  // Create series for background fill
-  // https://www.amcharts.com/docs/v5/charts/map-chart/map-polygon-series/#Background_polygon
+function plotBackground(root: am5.Root, chart: am5map.MapChart) {
   const backgroundSeries = chart.series.push(
     am5map.MapPolygonSeries.new(root, {})
   );
@@ -62,7 +87,9 @@ function initGlobeChart() {
   backgroundSeries.data.push({
     geometry: am5map.getGeoRectangle(90, 180, -90, -180),
   });
-  // Set up events
+}
+
+function setOnClickEvent(chart: am5map.MapChart, polygonSeries: am5map.MapPolygonSeries) {
   let previousPolygon;
   polygonSeries.mapPolygons.template.on("active", function (active, target) {
     if (previousPolygon && previousPolygon != target) {
@@ -77,13 +104,7 @@ function initGlobeChart() {
     }
     previousPolygon = target;
   });
-  // Make stuff animate on load
-  chart.appear(1000, 100);
 }
-
-onMounted(() => {
-  initGlobeChart();
-})
 </script>
 
 <style scoped>
